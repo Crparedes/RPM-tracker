@@ -1,0 +1,38 @@
+# find_peaks() source: https://github.com/stas-g/findPeaks
+find_peaks <- function (x, m = 3) {
+  shape <- diff(sign(diff(x, na.pad = FALSE)))
+  pks <- sapply(which(shape < 0), FUN = function(i) {
+    z <- i - m + 1
+    z <- ifelse(z > 0, z, 1)
+    w <- i + m + 1
+    w <- ifelse(w < length(x), w, length(x))
+    if(all(x[c(z : i, (i + 2) : w)] <= x[i + 1])) return(i + 1) else return(numeric(0))
+  })
+  pks <- unlist(pks)
+  pks
+}
+
+RPM <- function (lum, fps = 240, m = 3, n = 50, plot = FALSE, name = NULL) {
+  peaks <- find_peaks(x = lum, m = m)  
+  if (plot) {
+    if (missing(name)) {
+      plot(lum, xlim = c(1, n), type = 'o', xlab = 'Fotograma', ylab = 'Luminancia (lumas)')
+    } else {
+      plot(lum, xlim = c(1, n), type = 'o', main = name, xlab = 'Fotograma', ylab = 'Luminancia (lumas)')
+    }
+    points(x = peaks, y = lum[peaks], col = 2, pch = 8)
+  }
+  rev = length(peaks) / 2
+  time = length(lum) / 240 / 60
+  return(rev / time)
+}
+
+RobustRPM <- function (lum, frac = 10, fps = 240, n = 50, m = 3, plot = FALSE) {
+  ngr <- trunc(length(lum) / frac)
+  values <- vector()
+  for (i in 1:frac) {
+    values <- c(values, RPM(lum = lum[((i - 1) * ngr + 1):(i * ngr)], 
+                fps = fps, n = n, m = m, plot = plot))
+  }
+  return(values)
+}
